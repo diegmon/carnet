@@ -2,19 +2,18 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/preact';
 import { App } from '../../app/src/ui/App';
-import { motorDePrueba } from './ayuda';
+import { motorDePrueba, tokenDePrueba } from './ayuda';
 
 afterEach(cleanup);
 
 describe('App', () => {
-  it('la primera vez pide nombre y correo, y luego muestra Seguimiento', async () => {
+  it('la primera vez pide iniciar sesión con Google y luego muestra Seguimiento', async () => {
     const m = await motorDePrueba(false);
-    render(<App motor={m} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Empezar' }));
-    expect(screen.getByRole('alert').textContent).toMatch(/nombre/);
-    fireEvent.input(screen.getByLabelText('Tu nombre'), { target: { value: 'Ana Torres' } });
-    fireEvent.input(screen.getByLabelText('Tu correo de Google'), { target: { value: 'Ana.Torres@ejemplo.mx' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Empezar' }));
+    const acceso = { mostrarBoton(c: HTMLElement, alRecibir: (j: string) => void) {
+      const b = document.createElement('button'); b.textContent = 'Continuar con Google'; b.onclick = () => alRecibir(tokenDePrueba()); c.appendChild(b);
+    } };
+    render(<App motor={m} acceso={acceso} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continuar con Google' }));
     await screen.findByRole('heading', { name: 'Seguimiento' });
     expect(m.sesion?.correo).toBe('ana.torres@ejemplo.mx');
     expect(screen.getByText('Todo guardado en este teléfono')).toBeTruthy();

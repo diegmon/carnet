@@ -94,3 +94,9 @@ button { font: inherit; cursor: pointer; }
 .miniaturas figure button { position: absolute; top: 2px; right: 2px; min-width: 44px; min-height: 44px; border: 0; border-radius: 22px; background: rgba(255,255,255,.9); }
 .historial { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .historial li { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+
+.barra-estado { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+.acciones-barra { display: flex; gap: 6px; flex-wrap: wrap; }
+.acciones-barra button { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--claro); background: transparent; color: inherit; font-weight: 700; }
+.barra-estado .tarjeta { width: 100%; margin: 6px 0 0; color: var(--texto); }
+.boton-google { min-height: 44px; display: flex; justify-content: center; }

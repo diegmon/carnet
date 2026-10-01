@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'preact/hooks';
 import type { Motor } from '../estado/motor';
 
 export type Ruta =
-  | { p: 'seguimiento' } | { p: 'carnets' } | { p: 'documentos' } | { p: 'anulaciones' }
+  | { p: 'seguimiento' } | { p: 'carnets' } | { p: 'documentos' } | { p: 'anulaciones' } | { p: 'problemas' }
   | { p: 'carnet'; id: string } | { p: 'reunion'; id: string }
   | { p: 'nuevo-acuerdo'; reunionId: string; sustituyeA?: string } | { p: 'acuerdo'; id: string };
 
