@@ -77,3 +77,15 @@ describe('Sesión e interfaz de sincronización', () => {
     await waitFor(() => expect(m.problemas).toEqual([]));
   });
 });
+
+describe('primer inicio de sesión', () => {
+  it('al iniciar sesión por primera vez pide sincronizar de inmediato (trae lo de otras personas)', async () => {
+    const m = await motorDePrueba(false);
+    let pedidos = 0;
+    m.alPedirSincronizacion = () => { pedidos++; };
+    render(<App motor={m} acceso={accesoFalso()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continuar con Google' }));
+    await screen.findByRole('heading', { name: 'Seguimiento' });
+    await waitFor(() => expect(pedidos).toBe(1));
+  });
+});

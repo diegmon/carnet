@@ -26,7 +26,10 @@ export function IniciarSesion({ acceso }: { acceso?: Acceso }) {
       <h1>Carnet de Atención</h1>
       {acceso ? <>
         <p>Inicia sesión con tu cuenta de Google autorizada. Necesitas señal solo esta vez; después puedes capturar sin conexión.</p>
-        <BotonGoogle acceso={acceso} alIniciar={jwt => m.iniciarSesionGoogle(jwt)} />
+        <BotonGoogle acceso={acceso} alIniciar={async jwt => {
+          await m.iniciarSesionGoogle(jwt);
+          m.alPedirSincronizacion?.();
+        }} />
       </> : <p class="aviso">Esta copia de Carnet de Atención no está configurada para enviar datos. Pide la liga oficial a la cuenta dueña.</p>}
     </div>
   );
