@@ -3,6 +3,7 @@ import { aplicarOperaciones } from './aplicar';
 import { cambiosDesde, Cambios } from './cambios';
 import { Claims, ErrorAcceso, exigirUsuarioActivo, validarClaims } from './acceso';
 import { validarForma, Folios, Operacion, ResultadoOp } from '../dominio/operaciones';
+import { procesarFoto, RespuestaFoto } from './fotos';
 
 export const MAX_OPS = 200;
 
@@ -12,6 +13,8 @@ export interface Dependencias {
   ahora(): string;
   ahoraSeg(): number;
   candado<T>(fn: () => T): T;
+  /** Guarda un archivo (base64) en la carpeta de Drive y devuelve su URL. */
+  guardarArchivo?(nombre: string, tipo: string, base64: string): string;
 }
 
 export type Respuesta =
@@ -65,4 +68,15 @@ export function procesarSolicitud(cuerpo: string, deps: Dependencias): Respuesta
     if (e instanceof ErrorAcceso) return { ok: false, error: e.codigo, mensaje: e.message };
     throw e;
   }
+}
+
+/** Punto de entrada: despacha según la acción solicitada. */
+export function procesar(cuerpo: string, deps: Dependencias): Respuesta | RespuestaFoto {
+  try {
+    const s = JSON.parse(cuerpo);
+    if (s && typeof s === 'object' && s.accion === 'subir_foto') return procesarFoto(s as Record<string, unknown>, deps);
+  } catch {
+    /* procesarSolicitud responde JSON inválido */
+  }
+  return procesarSolicitud(cuerpo, deps);
 }

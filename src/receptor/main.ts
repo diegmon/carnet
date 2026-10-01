@@ -1,5 +1,7 @@
 import { AlmacenSheets, prepararLibro } from './sheets';
-import { procesarSolicitud, Dependencias, Respuesta } from './http';
+import { procesar, Dependencias } from './http';
+import type { Respuesta } from './http';
+import type { RespuestaFoto } from './fotos';
 import { sembrar } from './semillas';
 import type { Claims } from './acceso';
 
@@ -28,15 +30,20 @@ function dependencias(): Dependencias {
       l.waitLock(30000);
       try { return fn(); } finally { SpreadsheetApp.flush(); l.releaseLock(); }
     },
+    guardarArchivo: (nombre, tipo, base64) => {
+      const carpeta = new AlmacenSheets(libro()).config('carpeta_drive_id');
+      const blob = Utilities.newBlob(Utilities.base64Decode(base64), tipo, nombre);
+      return DriveApp.getFolderById(carpeta).createFile(blob).getUrl();
+    },
   };
 }
 
 const json = (x: unknown) => ContentService.createTextOutput(JSON.stringify(x)).setMimeType(ContentService.MimeType.JSON);
 
 export function doPost(e: GoogleAppsScript.Events.DoPost) {
-  let r: Respuesta;
+  let r: Respuesta | RespuestaFoto;
   try {
-    r = procesarSolicitud(e?.postData?.contents ?? '', dependencias());
+    r = procesar(e?.postData?.contents ?? '', dependencias());
   } catch (err) {
     console.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
     r = { ok: false, error: 'error_interno', mensaje: 'No se pudo sincronizar; se reintentará sola' };
