@@ -1,0 +1,34 @@
+# Documentos de referencia con datos reales de personas: NUNCA al repositorio (será público)
+*.docx
+*.docx.pdf
+TarjetaInformativa_*
+2026-09-29_20-58.png
+.~lock.*
+referencias/
+
+# Desarrollo
+node_modules/
+dist/
+.env
+.env.*
+.clasp.json
+*.log
+.DS_Store
+receptor-dist/
+
+# Ejemplos reales de mensajes (datos personales): nunca al repositorio
+current format
+app-dist/
+
+# Material de referencia con datos reales (capacitaciones, domicilios, exportaciones de WhatsApp)
+*.xlsx
+*.zip
+*.pdf
+# Espacio de trabajo local de los planes
+.superpowers/
+
+# Documentos internos y perfil de la institución (nunca al repositorio público)
+privado/
+
+# Íconos generados al compilar desde el perfil
+app/public/icono-*.png

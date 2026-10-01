@@ -1,0 +1,22 @@
+{
+  "institucion": "MI INSTITUCIÓN",
+  "prefijoFolio": "CA-",
+  "paraCargo": "Titular de la institución",
+  "etiquetaZona": "Zona",
+  "zonas": [{ "clave": "Z1", "nombre": "Zona Norte" }, { "clave": "Z2", "nombre": "Zona Centro" }, { "clave": "Z3", "nombre": "Zona Sur" }],
+  "instituciones": [
+    { "id": "fiscalia", "nombre": "Fiscalía", "siglas": "FISCALÍA", "tipo": "Autónomo", "area_de": "" },
+    { "id": "fiscalia-mp", "nombre": "Ministerio Público", "siglas": "MP", "tipo": "Área", "area_de": "fiscalia" },
+    { "id": "fiscalia-policia", "nombre": "Policía de Investigación", "siglas": "PI", "tipo": "Área", "area_de": "fiscalia" },
+    { "id": "busqueda", "nombre": "Comisión de Búsqueda de Personas", "siglas": "CBP", "tipo": "Organismo", "area_de": "" },
+    { "id": "busqueda-inmediata", "nombre": "Búsqueda Inmediata", "siglas": "", "tipo": "Área", "area_de": "busqueda" },
+    { "id": "seguridad", "nombre": "Secretaría de Seguridad", "siglas": "SEGURIDAD", "tipo": "Dependencia", "area_de": "" },
+    { "id": "monitoreo", "nombre": "Centro de Monitoreo", "siglas": "MONITOREO", "tipo": "Organismo", "area_de": "" },
+    { "id": "salud", "nombre": "Secretaría de Salud", "siglas": "SALUD", "tipo": "Dependencia", "area_de": "" },
+    { "id": "salud-clinica", "nombre": "Clínica Especializada", "siglas": "", "tipo": "Área", "area_de": "salud" },
+    { "id": "bienestar", "nombre": "Secretaría de Bienestar", "siglas": "BIENESTAR", "tipo": "Dependencia", "area_de": "" },
+    { "id": "victimas", "nombre": "Comisión de Atención a Víctimas", "siglas": "CAV", "tipo": "Organismo", "area_de": "" },
+    { "id": "derechos-humanos", "nombre": "Comisión de Derechos Humanos", "siglas": "CDH", "tipo": "Autónomo", "area_de": "" }
+  ],
+  "colores": { "primario": "#1F4E79", "primarioOscuro": "#163A5A", "acento": "#B98A3E" }
+}

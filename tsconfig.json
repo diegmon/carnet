@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2020"
+    ],
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": [
+      "google-apps-script"
+    ],
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@perfil": [
+        "./perfil.ejemplo.json"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "test",
+    "scripts"
+  ],
+  "exclude": [
+    "test/app"
+  ]
+}
