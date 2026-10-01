@@ -30,6 +30,11 @@ Todo lo propio de quien lo usa vive en un **perfil**, fuera del repositorio:
 - App: `npm run dev` (desarrollo) · `npm run build:app` (sale a `app-dist/`)
 - Receptor: `npm run build:receptor` y la guía `docs/INSTALACION_RECEPTOR.md`
 - Diccionario de datos: `docs/DICCIONARIO_DE_DATOS.md`
+- Prueba local de punta a punta (dos teléfonos simulados, sin Google):
+  1. `npm run receptor:local` (receptor en `http://localhost:8787`, en memoria; arráncalo de nuevo antes de cada corrida).
+  2. `PERFIL=perfil.ejemplo.json VITE_RECEPTOR_URL=http://localhost:8787 VITE_GOOGLE_CLIENT_ID=local VITE_ACCESO_PRUEBA=1 npm run build:app` y `npx vite preview --port 4173`.
+  3. `npm run e2e` (requiere Chromium; ruta en `CHROMIUM`, por omisión `/usr/bin/chromium`).
+  4. Vuelve a compilar sin esas variables antes de publicar: el acceso de prueba solo existe con `VITE_ACCESO_PRUEBA=1`.
 
 ## Licencia
 

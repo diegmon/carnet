@@ -19,7 +19,7 @@ Se hace una sola vez. Tiempo: ~30 minutos.
 5. **ID de cliente de Google** (para iniciar sesión desde la app):
    en https://console.cloud.google.com crear un proyecto gratuito `carnet`, *APIs y servicios › Pantalla de consentimiento*
    (tipo Externo, en modo prueba, agregar los correos del equipo como usuarios de prueba),
-   y *Credenciales › Crear ID de cliente de OAuth › Aplicación web*. Por ahora, sin orígenes (el Plan 4 agrega la dirección de GitHub Pages).
+   y *Credenciales › Crear ID de cliente de OAuth › Aplicación web*. En **Orígenes autorizados de JavaScript**, agregar la dirección donde se publica la app (por ejemplo, `https://USUARIO.github.io`) y, para pruebas, `http://localhost:4173`.
    Copiar el ID de cliente en la pestaña **CONFIG**, renglón `client_id`.
 6. **Usuarios:** en la pestaña **USUARIOS** agregar un renglón por persona: `correo`, `nombre`, `cargo`, `activo` = `TRUE`.
    MVP: la cuenta dueña y el primer usuario.
@@ -30,3 +30,17 @@ Se hace una sola vez. Tiempo: ~30 minutos.
 9. Revisar que las pestañas tengan formato de texto (Formato › Número › Texto sin formato) y que no esté compartida con nadie más.
 
 Para actualizar el código después: `npm run build:receptor && npx clasp push -f` y *Implementar › Administrar implementaciones › Editar › Nueva versión*.
+
+## Después de actualizar el código del receptor
+
+1. `npm run build:receptor && npx clasp push -f`.
+2. *Implementar › Administrar implementaciones › Editar › Nueva versión* (la URL no cambia).
+3. Si el cambio pide permisos nuevos (por ejemplo, Drive para las fotos), ejecutar `setup` una vez desde el editor y aceptarlos.
+
+## Configurar la app
+
+Copiar `app/env.ejemplo` a `app/.env.production.local` (no se sube a git) y llenar:
+- `VITE_RECEPTOR_URL`: la URL `/exec` del receptor.
+- `VITE_GOOGLE_CLIENT_ID`: el ID de cliente del paso 5.
+
+No son secretos: quedan dentro de la app publicada. La seguridad está en el receptor (verifica la sesión de Google y la lista USUARIOS).
