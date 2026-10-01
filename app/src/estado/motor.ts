@@ -5,10 +5,15 @@ import { formatearFolioProvisional, Fila } from '../../../src/dominio/tipos';
 import type {
   EntidadActualizable, EntidadCreable, EntidadQuitable, OpCrear, Operacion, ResultadoOp,
 } from '../../../src/dominio/operaciones';
-import { exportar, Persistencia, Sesion } from './persistencia';
+import { exportar, Instantanea, Persistencia, Problema, Sesion } from './persistencia';
+import { fusionar, reconstruir } from './base';
+import type { Cambios } from '../../../src/receptor/cambios';
 import { hoyLocal, isoLocal } from './fechas';
 
 export interface Ejecucion { ok: boolean; motivo?: string; resultados: ResultadoOp[] }
+
+export type FaseSync = 'inactivo' | 'enviando' | 'al_dia' | 'sin_red' | 'requiere_sesion' | 'no_autorizado' | 'error';
+export interface EstadoSync { fase: FaseSync; ultimaVez?: string; mensaje?: string }
 
 /** UUID v4. Usa crypto.randomUUID si existe; si no (http en red local), crypto.getRandomValues. */
 export function nuevoId(): string {
@@ -33,9 +38,17 @@ export class Motor {
   errorGuardado = '';
   /** true si otra pestaña o ventana tiene la escritura: aquí solo se consulta. */
   soloLectura = false;
+  /** Lo que el receptor ya confirmó (por cursor). La vista local es base + cola reaplicada. */
+  base: Instantanea = {};
+  cursor = 0;
+  /** Operaciones que el receptor rechazó: quedan a la vista hasta que la persona las descarta. */
+  problemas: Problema[] = [];
+  estadoSync: EstadoSync = { fase: 'inactivo' };
+  /** La app conecta aquí el envío inmediato (botón "Enviar ahora" y cambios recientes). */
+  alPedirSincronizacion?: () => void;
 
   constructor(
-    readonly almacen: AlmacenMemoria,
+    public almacen: AlmacenMemoria,
     public cola: Operacion[],
     public sesion: Sesion | undefined,
     readonly persistencia: Persistencia,
@@ -44,7 +57,11 @@ export class Motor {
 
   static async abrir(persistencia: Persistencia, reloj?: () => Date): Promise<Motor> {
     const d = await persistencia.cargar();
-    return new Motor(new AlmacenMemoria(d.tablas), d.cola, d.sesion, persistencia, reloj);
+    const m = new Motor(new AlmacenMemoria(d.tablas), d.cola, d.sesion, persistencia, reloj);
+    m.base = d.base;
+    m.cursor = d.cursor;
+    m.problemas = d.problemas;
+    return m;
   }
 
   suscribir(fn: () => void): () => void {
@@ -52,7 +69,7 @@ export class Motor {
     return () => { this.oyentes.delete(fn); };
   }
 
-  private avisar(): void {
+  notificar(): void {
     for (const fn of this.oyentes) fn();
   }
 
@@ -69,7 +86,7 @@ export class Motor {
     sembrar(this.almacen, () => this.reloj().toISOString(), '');
     await this.persistencia.guardarSesion(sesion);
     this.persistir();
-    this.avisar();
+    this.notificar();
     await this.guardado;
   }
 
@@ -89,7 +106,7 @@ export class Motor {
       this.cola.push(op);
     }
     this.persistir();
-    this.avisar();
+    this.notificar();
     const fallida = resultados.find(r => r.estado === 'rechazada');
     return { ok: !fallida, motivo: fallida?.motivo, resultados };
   }
@@ -97,19 +114,56 @@ export class Motor {
   private persistir(): void {
     const tablas = exportar(this.almacen);
     const cola = [...this.cola];
+    const sincronia = { base: this.base, cursor: this.cursor, problemas: [...this.problemas] };
     // Cada escritura lleva la foto completa: si una falla, la siguiente repara todo. La cadena nunca queda rechazada.
     this.guardado = this.guardado
-      .then(() => this.persistencia.guardar(tablas, cola))
+      .then(() => this.persistencia.guardar(tablas, cola, sincronia))
       .then(
-        () => { if (this.errorGuardado) { this.errorGuardado = ''; this.avisar(); } },
+        () => { if (this.errorGuardado) { this.errorGuardado = ''; this.notificar(); } },
         () => {
           this.errorGuardado = 'No se pudo guardar en este teléfono. Lo capturado sigue en pantalla; se reintentará con el siguiente cambio.';
-          this.avisar();
+          this.notificar();
         },
       );
   }
 
   esperarGuardado(): Promise<void> { return this.guardado; }
+
+  fijarEstadoSync(e: EstadoSync): void {
+    this.estadoSync = e;
+    this.notificar();
+  }
+
+  /** Aplica la respuesta del receptor a un lote enviado. Lo capturado mientras tanto sigue en la cola. */
+  aplicarRespuesta(enviadas: Operacion[], r: { resultados: { op_id: string; estado: string; motivo?: string }[]; cambios: Cambios }): void {
+    const respondidas = new Map(r.resultados.map(x => [x.op_id, x]));
+    for (const op of enviadas) {
+      const res = respondidas.get(op.op_id);
+      if (res?.estado === 'rechazada') this.problemas.push({ op, motivo: res.motivo ?? 'Rechazada por el receptor', fecha: this.ts() });
+    }
+    this.cola = this.cola.filter(op => !respondidas.has(op.op_id));
+    this.base = fusionar(this.base, r.cambios);
+    this.cursor = r.cambios.rev;
+    this.reconstruirVista();
+  }
+
+  marcarFotoSubida(anexoId: string, url: string): void {
+    this.base = { ...this.base, anexos: (this.base.anexos ?? []).map(a => (a.id === anexoId ? { ...a, drive_url: url } : a)) };
+    this.reconstruirVista();
+  }
+
+  descartarProblema(opId: string): void {
+    this.problemas = this.problemas.filter(p => p.op.op_id !== opId);
+    this.persistir();
+    this.notificar();
+  }
+
+  private reconstruirVista(): void {
+    if (!this.sesion) return;
+    this.almacen = reconstruir(this.base, this.cola, this.sesion, () => this.reloj().toISOString()).almacen;
+    this.persistir();
+    this.notificar();
+  }
 
   crear(entidad: EntidadCreable, datos: Fila, id = nuevoId()): OpCrear {
     return { op_id: nuevoId(), tipo: 'crear', entidad, id, datos, ts: this.ts() };

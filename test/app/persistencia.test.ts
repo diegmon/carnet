@@ -9,7 +9,7 @@ const op: Operacion = { op_id: 'o1', tipo: 'sellar', entidad: 'reunion', id: 'r1
 for (const [nombre, crear] of [['IndexedDB', () => persistenciaIdb('prueba-' + Math.random())], ['memoria', persistenciaMemoria]] as const) {
   describe(`persistencia en ${nombre}`, () => {
     it('empieza vacía', async () => {
-      expect(await crear().cargar()).toEqual({ tablas: {}, cola: [], sesion: undefined });
+      expect(await crear().cargar()).toEqual({ tablas: {}, cola: [], sesion: undefined, base: {}, cursor: 0, problemas: [] });
     });
     it('guarda y recarga tablas, cola y sesión', async () => {
       const p = crear();
