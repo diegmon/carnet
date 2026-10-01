@@ -27,3 +27,9 @@ export function reunionCon(m: Motor, personaId: string): string {
 }
 
 export { render };
+
+/** JWT sin firma con el contenido que usa la app (solo para pruebas). */
+export function tokenDePrueba(correo = USUARIA.correo, nombre = USUARIA.nombre, expira = Math.floor(HOY.getTime() / 1000) + 3600): string {
+  const b64 = (o: object) => btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${b64({ alg: 'none' })}.${b64({ email: correo, name: nombre, exp: expira, email_verified: true })}.firma`;
+}

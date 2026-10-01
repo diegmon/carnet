@@ -7,6 +7,7 @@ import type {
 } from '../../../src/dominio/operaciones';
 import { exportar, Instantanea, Persistencia, Problema, Sesion } from './persistencia';
 import { fusionar, reconstruir } from './base';
+import { leerToken } from './sesion-google';
 import type { Cambios } from '../../../src/receptor/cambios';
 import { hoyLocal, isoLocal } from './fechas';
 
@@ -88,6 +89,20 @@ export class Motor {
     this.persistir();
     this.notificar();
     await this.guardado;
+  }
+
+  /** Inicio de sesión con Google: la primera vez configura; después solo renueva el token. */
+  async iniciarSesionGoogle(jwt: string): Promise<void> {
+    const t = leerToken(jwt);
+    if (this.sesion && this.sesion.correo !== t.correo && this.cola.length > 0) {
+      throw new Error('Este teléfono tiene cambios sin enviar de otra cuenta');
+    }
+    if (!this.sesion || this.sesion.correo !== t.correo) {
+      await this.configurarSesion({ correo: t.correo, nombre: t.nombre, cargo: '' });
+    }
+    this.sesion = { ...this.sesion!, token: jwt, expira: t.expira };
+    await this.persistencia.guardarSesion(this.sesion);
+    this.notificar();
   }
 
   ejecutar(...ops: Operacion[]): Ejecucion {
