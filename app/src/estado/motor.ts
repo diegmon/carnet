@@ -167,6 +167,16 @@ export class Motor {
     this.reconstruirVista();
   }
 
+  /** Una foto que el receptor no aceptará nunca: queda en Problemas y deja de reenviarse. */
+  registrarProblemaFoto(anexoId: string, descripcion: string, motivo: string): void {
+    this.problemas.push({
+      op: { op_id: `foto:${anexoId}`, tipo: 'crear', entidad: 'anexo', id: anexoId, ts: this.ts(), datos: { descripcion } },
+      motivo, fecha: this.ts(),
+    });
+    this.persistir();
+    this.notificar();
+  }
+
   descartarProblema(opId: string): void {
     this.problemas = this.problemas.filter(p => p.op.op_id !== opId);
     this.persistir();

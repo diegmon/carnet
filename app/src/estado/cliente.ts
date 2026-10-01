@@ -30,7 +30,7 @@ export function clienteHttp(url: string, f: typeof fetch = (...a) => fetch(...a)
     try {
       return (await res.json()) as T;
     } catch {
-      return SIN_RED;
+      return { ok: false, error: 'error_interno', mensaje: 'El receptor no respondió como se esperaba; revisa su publicación (acceso "Cualquier usuario")' };
     }
   }
   return {

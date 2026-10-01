@@ -26,11 +26,11 @@ describe('clienteHttp', () => {
     expect(JSON.parse(String(llamadas[0].init.body))).toEqual({ accion: 'sincronizar', id_token: 'tok', cursor: 2, ops: [] });
   });
 
-  it('sin red o con respuesta ilegible responde sin_red; un HTTP 500 es error_interno', async () => {
+  it('sin red responde sin_red; una respuesta ilegible o un HTTP 500 es error_interno', async () => {
     const caido = (async () => { throw new TypeError('Failed to fetch'); }) as unknown as typeof fetch;
     expect(await clienteHttp('https://r', caido).sincronizar('t', 0, [])).toMatchObject({ ok: false, error: 'sin_red' });
     const html = (async () => new Response('<html>')) as unknown as typeof fetch;
-    expect(await clienteHttp('https://r', html).subirFoto('t', 'a', 'image/jpeg', 'QQ==')).toMatchObject({ ok: false, error: 'sin_red' });
+    expect(await clienteHttp('https://r', html).subirFoto('t', 'a', 'image/jpeg', 'QQ==')).toMatchObject({ ok: false, error: 'error_interno' });
     const fallo = (async () => new Response('x', { status: 500 })) as unknown as typeof fetch;
     expect(await clienteHttp('https://r', fallo).sincronizar('t', 0, [])).toMatchObject({ ok: false, error: 'error_interno' });
   });

@@ -3,7 +3,11 @@ import { useMotor } from './contexto';
 import { Aviso } from './comunes';
 import { PERFIL } from '../../../src/dominio/perfil';
 
-export interface Acceso { mostrarBoton(contenedor: HTMLElement, alRecibir: (jwt: string) => void): void }
+export interface Acceso {
+  mostrarBoton(contenedor: HTMLElement, alRecibir: (jwt: string) => void): void;
+  /** Intenta renovar la sesión sin que la persona toque nada (One Tap). */
+  renovar?(alRecibir: (jwt: string) => void): void;
+}
 
 function BotonGoogle({ acceso, alIniciar }: { acceso: Acceso; alIniciar(jwt: string): Promise<void> }) {
   const lugar = useRef<HTMLDivElement>(null);

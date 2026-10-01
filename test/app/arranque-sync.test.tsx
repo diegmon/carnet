@@ -43,7 +43,7 @@ describe('arrancar con sincronización', () => {
     const m = await arrancar(raiz, p, async () => true, {
       config: { receptorUrl: 'https://r.example', clientId: 'c' }, cliente,
     });
-    await vi.waitFor(() => expect(llamadas.length).toBeGreaterThanOrEqual(1));
+    await vi.waitFor(() => expect(m!.estadoSync.fase).toBe('al_dia'));
     m!.alPedirSincronizacion!();
     await vi.waitFor(() => expect(llamadas.length).toBeGreaterThanOrEqual(2));
     montar(null, raiz);

@@ -4,6 +4,7 @@ interface GoogleId {
   accounts: { id: {
     initialize(o: { client_id: string; callback: (r: { credential: string }) => void; auto_select?: boolean }): void;
     renderButton(el: HTMLElement, o: Record<string, unknown>): void;
+    prompt(): void;
   } };
 }
 
@@ -34,6 +35,13 @@ export function accesoGoogle(clientId: string): Acceso {
       }, e => {
         contenedor.textContent = (e as Error).message;
       });
+    },
+    renovar(recibir) {
+      alRecibir = recibir;
+      cargarGoogle().then(g => {
+        g.accounts.id.initialize({ client_id: clientId, callback: r => alRecibir(r.credential), auto_select: true });
+        g.accounts.id.prompt();
+      }, () => undefined);
     },
   };
 }

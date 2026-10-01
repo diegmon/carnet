@@ -74,6 +74,7 @@ describe('Sesión e interfaz de sincronización', () => {
     expect(screen.getByText('La reunión ya está sellada')).toBeTruthy();
     expect(screen.getByText(/Cambio en una reunión/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, descartar' }));
     await waitFor(() => expect(m.problemas).toEqual([]));
   });
 });

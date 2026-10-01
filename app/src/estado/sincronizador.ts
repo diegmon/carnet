@@ -39,11 +39,17 @@ export class Sincronizador {
         m.aplicarRespuesta(lote, r);
         if (m.cola.length === 0 || m.cola.length >= antes || vuelta > 1000) break;
       }
+      // Las fotos van dentro del candado de esta sincronización para no subir la misma dos veces;
+      // la barra sigue en "Enviando…" hasta que terminan.
+      try {
+        await this.opciones.alTerminar?.();
+      } catch {
+        /* las fotos se reintentan en la siguiente sincronización */
+      }
       this.fijar({ fase: 'al_dia', ultimaVez: isoLocal(m.reloj()) });
     } finally {
       this.enCurso = false;
     }
-    await this.opciones.alTerminar?.();
     return m.estadoSync;
   }
 

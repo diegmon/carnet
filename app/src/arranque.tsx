@@ -16,12 +16,18 @@ type Reloj = Pick<typeof globalThis, 'setInterval' | 'clearInterval' | 'setTimeo
 /** Cuándo intentar enviar: al iniciar, al volver la señal, cada cierto tiempo y poco después de capturar. */
 export function programarSincronizacion(
   sinc: () => void,
-  opciones: { cadaMs?: number; ventana?: Pick<Window, 'addEventListener' | 'removeEventListener'>; reloj?: Reloj } = {},
+  opciones: {
+    cadaMs?: number; ventana?: Pick<Window, 'addEventListener' | 'removeEventListener'>; reloj?: Reloj;
+    documento?: Pick<Document, 'addEventListener' | 'removeEventListener' | 'visibilityState'>;
+  } = {},
 ): { cambioLocal(): void; detener(): void } {
   const reloj = opciones.reloj ?? globalThis;
   const ventana = opciones.ventana ?? window;
   const alVolver = () => sinc();
   ventana.addEventListener('online', alVolver);
+  const documento = opciones.documento ?? (typeof document !== 'undefined' ? document : undefined);
+  const alMostrar = () => { if (documento?.visibilityState === 'visible') sinc(); };
+  documento?.addEventListener('visibilitychange', alMostrar);
   const intervalo = reloj.setInterval(sinc, opciones.cadaMs ?? 120_000);
   let espera: ReturnType<typeof setTimeout> | undefined;
   sinc();
@@ -32,6 +38,7 @@ export function programarSincronizacion(
     },
     detener() {
       ventana.removeEventListener('online', alVolver);
+      documento?.removeEventListener('visibilitychange', alMostrar);
       reloj.clearInterval(intervalo);
       if (espera !== undefined) reloj.clearTimeout(espera);
     },
@@ -74,7 +81,20 @@ export async function arrancar(
         if (token) await subirFotosPendientes(motor, cliente, token);
       },
     });
-    const disparar = () => { if (motor.sesion) void sinc.sincronizar(); };
+    let renovando = false;
+    const disparar = () => {
+      if (!motor.sesion) return;
+      void sinc.sincronizar().then(e => {
+        const conSenal = typeof navigator === 'undefined' || navigator.onLine !== false;
+        if (e.fase !== 'requiere_sesion' || !acceso?.renovar || renovando || !conSenal) return;
+        // La sesión de Google dura una hora: se intenta renovar sola; si no, queda el botón manual.
+        renovando = true;
+        setTimeout(() => { renovando = false; }, 60_000);
+        acceso.renovar(jwt => {
+          motor.iniciarSesionGoogle(jwt).then(() => { renovando = false; disparar(); }, () => { renovando = false; });
+        });
+      });
+    };
     motor.alPedirSincronizacion = disparar;
     const programa = programarSincronizacion(disparar);
     let colaPrevia = motor.cola.length;

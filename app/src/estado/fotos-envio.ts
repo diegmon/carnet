@@ -20,30 +20,55 @@ export async function comprimirFoto(b: Blob, max = 1600, calidad = 0.8): Promise
   }
 }
 
+/** Bytes de un Blob; usa FileReader donde no existe Blob.arrayBuffer (iOS anteriores a 14). */
+async function bytesDe(b: Blob): Promise<Uint8Array> {
+  if (typeof b.arrayBuffer === 'function') return new Uint8Array(await b.arrayBuffer());
+  return new Promise((resolver, rechazar) => {
+    const lector = new FileReader();
+    lector.onload = () => resolver(new Uint8Array(lector.result as ArrayBuffer));
+    lector.onerror = () => rechazar(lector.error);
+    lector.readAsArrayBuffer(b);
+  });
+}
+
 export async function aBase64(b: Blob): Promise<string> {
-  const bytes = new Uint8Array(await b.arrayBuffer());
+  const bytes = await bytesDe(b);
   let s = '';
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(s);
 }
 
+const TIPOS_SUBIBLES = ['image/jpeg', 'image/png', 'image/webp'];
+
 export async function subirFotosPendientes(
   motor: Motor, cliente: ClienteReceptor, token: string, comprimir: (b: Blob) => Promise<Blob> = comprimirFoto,
 ): Promise<number> {
-  const pendientes = (motor.base.anexos ?? []).filter(a => !a.drive_url && !verdadero(a.quitado));
+  const conProblema = new Set(motor.problemas.map(p => p.op.op_id));
+  const pendientes = (motor.base.anexos ?? [])
+    .filter(a => !a.drive_url && !verdadero(a.quitado) && !conProblema.has(`foto:${a.id}`));
   let subidas = 0;
   for (const anexo of pendientes) {
     const id = String(anexo.id);
+    const descripcion = String(anexo.descripcion ?? '');
     const original = await motor.persistencia.leerFoto(id);
     if (!original) continue;
     const foto = await comprimir(original);
-    const r = await cliente.subirFoto(token, id, foto.type || 'image/jpeg', await aBase64(foto));
+    const tipo = foto.type || 'image/jpeg';
+    if (!TIPOS_SUBIBLES.includes(tipo)) {
+      motor.registrarProblemaFoto(id, descripcion, 'Formato de foto no compatible (por ejemplo, HEIC). Vuelve a tomarla con la cámara desde la app.');
+      continue;
+    }
+    const r = await cliente.subirFoto(token, id, tipo, await aBase64(foto));
     if (r.ok) {
       motor.marcarFotoSubida(id, r.drive_url);
       subidas++;
-    } else if (r.error === 'sin_red') {
+    } else if (r.error === 'sin_red' || r.error === 'sesion_vencida' || r.error === 'no_autorizado') {
       break;
+    } else if (r.error === 'solicitud_invalida') {
+      // Rechazo definitivo: se avisa en Problemas y no se vuelve a enviar.
+      motor.registrarProblemaFoto(id, descripcion, r.mensaje);
     }
+    // 'pendiente' y 'error_interno' se reintentan en la siguiente sincronización.
   }
   return subidas;
 }
